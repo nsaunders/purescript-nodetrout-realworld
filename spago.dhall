@@ -1,7 +1,15 @@
 { name =
     "nodetrout-realworld"
 , dependencies =
-    [ "console", "effect", "nodetrout", "psci-support", "trout" ]
+    [ "console"
+    , "crypto"
+    , "effect"
+    , "nodetrout"
+    , "psci-support"
+    , "querydsl"
+    , "random"
+    , "trout"
+    ]
 , packages =
     ./packages.dhall
 , sources =
