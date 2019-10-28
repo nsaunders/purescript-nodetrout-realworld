@@ -1,4 +1,4 @@
-module Conduit.Database.User where
+module Conduit.Store.User where
 
 import Prelude
 import Conduit.Data.Email (Email)
@@ -47,8 +47,8 @@ genSalt = liftEffect do
 hashPassword :: forall m. MonadEffect m => Salt -> String -> m String
 hashPassword (Salt salt) pass = liftEffect $ base64 SHA512 $ pass <> salt
 
-register :: forall m. MonadAff m => DBConnection -> Registration -> m Unit
-register db { email, username, password } = do
+register :: forall m. MonadAff m => Registration -> DBConnection -> m Unit
+register { email, username, password } db = do
   salt <- genSalt
   passwordHash <- hashPassword salt password
   liftAff $ runQuery db $ insertInto user
