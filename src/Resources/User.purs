@@ -2,7 +2,7 @@ module Conduit.Resources.User where
 
 import Prelude
 import Conduit.Capability.User (class ManageUser, registerUser)
-import Conduit.Store.User (Registration)
+import Conduit.Data.Registration (Registration)
 import Control.Monad.Except (ExceptT)
 import Data.Argonaut (class EncodeJson, encodeJson)
 import Nodetrout (HTTPError)

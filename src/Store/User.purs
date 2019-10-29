@@ -3,6 +3,9 @@ module Conduit.Store.User where
 import Prelude
 import Conduit.Data.Email (Email)
 import Conduit.Data.Email (toString) as Email
+import Conduit.Data.Password (Password)
+import Conduit.Data.Password (toString) as Password
+import Conduit.Data.Registration (Registration)
 import Conduit.Data.Username (Username)
 import Conduit.Data.Username (toString) as Username
 import Data.Array (index, length)
@@ -28,12 +31,6 @@ user = makeTable "user" :: Table
   , image :: Column String False
   )
 
-type Registration =
-  { email :: Email
-  , username :: Username
-  , password :: String
-  }
-
 newtype Salt = Salt String
 
 derive instance newtypeSalt :: Newtype Salt _
@@ -44,8 +41,8 @@ genSalt = liftEffect do
   size <- randomInt 5 10
   (Salt <<< fromCharArray) <$> replicateA size ((fromMaybe 'A' <<< index chars) <$> randomInt 0 (length chars))
 
-hashPassword :: forall m. MonadEffect m => Salt -> String -> m String
-hashPassword (Salt salt) pass = liftEffect $ base64 SHA512 $ pass <> salt
+hashPassword :: forall m. MonadEffect m => Salt -> Password -> m String
+hashPassword (Salt salt) pass = liftEffect $ base64 SHA512 $ (Password.toString pass) <> salt
 
 register :: forall m. MonadAff m => Registration -> DBConnection -> m Unit
 register { email, username, password } db = do

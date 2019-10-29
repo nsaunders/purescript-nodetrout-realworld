@@ -1,7 +1,7 @@
 module Conduit.Capability.User where
 
 import Prelude
-import Conduit.Store.User (Registration)
+import Conduit.Data.Registration (Registration)
 import Control.Monad.Except (ExceptT)
 import Control.Monad.Trans.Class (lift)
 
