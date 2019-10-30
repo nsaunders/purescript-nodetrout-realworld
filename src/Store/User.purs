@@ -1,12 +1,10 @@
 module Conduit.Store.User where
 
 import Prelude
-import Conduit.Data.Email (Email)
 import Conduit.Data.Email (toString) as Email
 import Conduit.Data.Password (Password)
 import Conduit.Data.Password (toString) as Password
 import Conduit.Data.Registration (Registration)
-import Conduit.Data.Username (Username)
 import Conduit.Data.Username (toString) as Username
 import Data.Array (index, length)
 import Data.Maybe (fromMaybe)
