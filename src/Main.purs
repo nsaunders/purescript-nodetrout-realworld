@@ -9,6 +9,7 @@ import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
+import Effect.Exception (message)
 import Node.HTTP (createServer, listen)
 import Nodetrout (serve)
 import SQLite3 (newDB)
@@ -21,7 +22,7 @@ main :: Effect Unit
 main = launchAff_ do
   db <- newDB "conduit.db"
   liftEffect do
-    server <- createServer $ serve api resources (runAppM { db })
+    server <- createServer $ serve api resources (runAppM { db }) onError
     listen server { hostname: "0.0.0.0", port: 3000, backlog: Nothing } $ log "Listening on port 3000..."
 
   where
@@ -31,3 +32,5 @@ main = launchAff_ do
     resources =
       { users: User.resources
       }
+
+    onError e = log $ "An unhandled error occurred: " <> message e

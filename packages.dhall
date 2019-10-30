@@ -4,7 +4,13 @@ let mkPackage =
 let upstream =
       https://github.com/purescript/package-sets/releases/download/psc-0.13.3-20191005/packages.dhall sha256:ba287d858ada09c4164792ad4e643013b742c208cbedf5de2e35ee27b64b6817
 
-let overrides = {=}
+let overrides =
+      { trout =
+          mkPackage
+            [ "argonaut", "media-types", "prelude", "smolder", "uri" ]
+            "https://github.com/nsaunders/purescript-trout.git"
+            "4edde87293e3905817bfa184e1434be5d2989f39"
+      }
 
 let additions =
       { nodetrout =
@@ -14,17 +20,11 @@ let additions =
             , "form-urlencoded"
             , "http-methods"
             , "node-http"
-            , "prelude"
             , "profunctor-lenses"
             , "trout"
             ]
             "https://github.com/nsaunders/purescript-nodetrout.git"
-            "ca465ef18832ce3c8b6faedc2ddca2faabb1adae"
-      , trout =
-          mkPackage
-            [ "argonaut", "media-types", "prelude", "smolder", "uri" ]
-            "https://github.com/nsaunders/purescript-trout.git"
-            "4edde87293e3905817bfa184e1434be5d2989f39"
+            "b8aa198d83b643275e3e07d5a23726ad952b75c3"
       }
 
 in  upstream // overrides // additions
