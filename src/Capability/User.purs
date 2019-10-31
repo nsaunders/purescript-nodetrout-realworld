@@ -1,12 +1,8 @@
 module Conduit.Capability.User where
 
 import Prelude
-import Conduit.Data.Registration (Registration)
+import Conduit.Data.Registration (Registration, RegistrationError)
 import Control.Monad.Except (ExceptT)
-import Control.Monad.Trans.Class (lift)
 
 class Monad m <= ManageUser m where
-  registerUser :: Registration -> m Unit
-
-instance manageUserExcept :: ManageUser m => ManageUser (ExceptT e m) where
-  registerUser = lift <<< registerUser
+  registerUser :: Registration -> ExceptT RegistrationError m Unit

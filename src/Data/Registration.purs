@@ -9,3 +9,5 @@ type Registration =
   , username :: Username
   , password :: Password
   }
+
+data RegistrationError = UsernameConflict

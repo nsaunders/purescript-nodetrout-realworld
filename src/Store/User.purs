@@ -4,10 +4,11 @@ import Prelude
 import Conduit.Data.Email (toString) as Email
 import Conduit.Data.Password (Password)
 import Conduit.Data.Password (toString) as Password
-import Conduit.Data.Registration (Registration)
+import Conduit.Data.Registration (Registration, RegistrationError(..))
 import Conduit.Data.Username (toString) as Username
+import Control.Monad.Except (ExceptT, throwError)
 import Data.Array (index, length)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe, fromMaybe, isJust)
 import Data.Newtype (class Newtype, un)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Data.Unfoldable (replicateA)
@@ -15,8 +16,9 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Random (randomInt)
 import Node.Crypto.Hash (Algorithm(SHA512), base64)
-import QueryDsl (Column, Table, insertInto, makeTable)
-import QueryDsl.SQLite3 (runQuery)
+import QueryDsl (Column, Table, from, insertInto, makeTable, select, where_)
+import QueryDsl.Expressions (eq) as Q
+import QueryDsl.SQLite3 (runQuery, runSelectMaybeQuery)
 import SQLite3 (DBConnection)
 import Type.Data.Boolean (False, True)
 
@@ -42,8 +44,13 @@ genSalt = liftEffect do
 hashPassword :: forall m. MonadEffect m => Salt -> Password -> m String
 hashPassword (Salt salt) pass = liftEffect $ base64 SHA512 $ (Password.toString pass) <> salt
 
-register :: forall m. MonadAff m => Registration -> DBConnection -> m Unit
+register :: forall m. MonadAff m => Registration -> DBConnection -> ExceptT RegistrationError m Unit
 register { email, username, password } db = do
+  existing :: Maybe { username :: String } <- liftAff $ runSelectMaybeQuery db do
+                                                u <- from user
+                                                pure $ select { username: u.username }
+                                                  `where_` (u.username `Q.eq` Username.toString username)
+  when (isJust existing) (throwError UsernameConflict)
   salt <- genSalt
   passwordHash <- hashPassword salt password
   liftAff $ runQuery db $ insertInto user
