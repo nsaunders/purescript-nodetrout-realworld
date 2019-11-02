@@ -6,6 +6,7 @@ import Data.Maybe (Maybe)
 
 type User =
   { email :: Email
+  , token :: String
   , username :: Username
   , bio :: Maybe String
   , image :: Maybe String

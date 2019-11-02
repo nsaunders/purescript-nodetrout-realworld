@@ -4,7 +4,7 @@ import Prelude
 import Conduit.Data.Email (toString) as Email
 import Conduit.Data.Password (Password)
 import Conduit.Data.Password (toString) as Password
-import Conduit.Data.Registration (Registration, RegistrationError(..))
+import Conduit.Data.Auth (Registration, RegistrationError(..))
 import Conduit.Data.Username (toString) as Username
 import Control.Monad.Except (ExceptT, throwError)
 import Data.Array (index, length)
@@ -59,3 +59,10 @@ register { email, username, password } db = do
     , passwordHash
     , salt: (un Salt salt)
     }
+
+{-
+getByUsername :: forall m. MonadAff m => Username -> DBConnection -> m (Maybe User)
+getByUsername db = liftAff $ runSelectMaybeQuery db do
+  u <- from user
+  pure $ select { email: u.email, token
+                -}

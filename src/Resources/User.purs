@@ -2,7 +2,7 @@ module Conduit.Resources.User where
 
 import Prelude
 import Conduit.Capability.User (class ManageUser, registerUser)
-import Conduit.Data.Registration (Registration, RegistrationError(..))
+import Conduit.Data.Auth (Registration, RegistrationError(..))
 import Control.Monad.Except (ExceptT, withExceptT)
 import Data.Lens ((.~))
 import Data.Maybe (Maybe(Just))
