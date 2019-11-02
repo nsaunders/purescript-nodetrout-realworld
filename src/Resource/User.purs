@@ -1,4 +1,4 @@
-module Conduit.Resources.User where
+module Conduit.Resource.User where
 
 import Prelude
 import Conduit.Capability.User (class ManageUser, registerUser)

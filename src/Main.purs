@@ -3,7 +3,7 @@ module Main where
 import Prelude
 import Conduit.Api.User (Api) as User
 import Conduit.AppM (runAppM)
-import Conduit.Resources.User (resources) as User
+import Conduit.Resource.User (resources) as User
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff (launchAff_)
