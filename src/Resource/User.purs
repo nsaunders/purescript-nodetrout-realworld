@@ -12,12 +12,12 @@ import Nodetrout (HTTPError, _errorDetails, error401, error409, error500)
 resources
   :: forall m
    . ManageUser m
-  => { login :: Login -> { "POST" :: ExceptT HTTPError m { user :: User } }
-     , registration :: Registration -> { "POST" :: ExceptT HTTPError m { user :: User } }
+  => { login :: { user :: Login } -> { "POST" :: ExceptT HTTPError m { user :: User } }
+     , registration :: { user :: Registration } -> { "POST" :: ExceptT HTTPError m { user :: User } }
      }
 resources =
-  { login: \l -> { "POST": withExceptT loginErrorHTTP $ { user: _ } <$> loginUser l }
-  , registration: \r -> { "POST": withExceptT registrationErrorHTTP $ { user: _ } <$> registerUser r }
+  { login: \{ user: l } -> { "POST": withExceptT loginErrorHTTP $ { user: _ } <$> loginUser l }
+  , registration: \{ user: r } -> { "POST": withExceptT registrationErrorHTTP $ { user: _ } <$> registerUser r }
   }
 
 loginErrorHTTP :: LoginError -> HTTPError
