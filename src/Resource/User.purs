@@ -1,22 +1,29 @@
 module Conduit.Resource.User where
 
 import Prelude
-import Conduit.Capability.User (class ManageUser, registerUser)
-import Conduit.Data.Auth (Registration, RegistrationError(..))
+import Conduit.Capability.User (class ManageUser, loginUser, registerUser)
+import Conduit.Data.Auth (Login, LoginError(..), Registration, RegistrationError(..))
 import Conduit.Data.User (User)
 import Control.Monad.Except (ExceptT, withExceptT)
 import Data.Lens ((.~))
 import Data.Maybe (Maybe(Just))
-import Nodetrout (HTTPError, _errorDetails, error409)
+import Nodetrout (HTTPError, _errorDetails, error401, error409, error500)
 
 resources
   :: forall m
    . ManageUser m
-  => { registration :: Registration -> { "POST" :: ExceptT HTTPError m { user :: User } }
+  => { login :: Login -> { "POST" :: ExceptT HTTPError m { user :: User } }
+     , registration :: Registration -> { "POST" :: ExceptT HTTPError m { user :: User } }
      }
 resources =
-  { registration: \r -> { "POST": withExceptT registrationErrorHTTP $ { user: _ } <$> registerUser r }
+  { login: \l -> { "POST": withExceptT loginErrorHTTP $ { user: _ } <$> loginUser l }
+  , registration: \r -> { "POST": withExceptT registrationErrorHTTP $ { user: _ } <$> registerUser r }
   }
+
+loginErrorHTTP :: LoginError -> HTTPError
+loginErrorHTTP = case _ of
+  InvalidUserData -> error500 # _errorDetails .~ Just "Invalid user data"
+  _ -> error401 # _errorDetails .~ Just "Invalid username or password"
 
 registrationErrorHTTP :: RegistrationError -> HTTPError
 registrationErrorHTTP = case _ of

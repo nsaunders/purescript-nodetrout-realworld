@@ -25,6 +25,7 @@ instance monadAskAppM :: TypeEquals e Env => MonadAsk e AppM where
   ask = AppM $ asks from
 
 instance manageUserAppM :: ManageUser AppM where
+  loginUser login = asks _.db >>= UserStore.logIn login
   registerUser registration = asks _.db >>= UserStore.register registration
 
 runAppM :: Env -> AppM ~> Aff
