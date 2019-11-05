@@ -1,14 +1,18 @@
 module Conduit.Store.User where
 
 import Prelude
+import Conduit.Data.Auth (Login, LoginError(..), Registration, RegistrationError(..))
+import Conduit.Data.Email (mkEmail)
 import Conduit.Data.Email (toString) as Email
 import Conduit.Data.Password (Password)
 import Conduit.Data.Password (toString) as Password
-import Conduit.Data.Auth (Registration, RegistrationError(..))
+import Conduit.Data.User (User)
+import Conduit.Data.Username (mkUsername)
 import Conduit.Data.Username (toString) as Username
 import Control.Monad.Except (ExceptT, throwError)
 import Data.Array (index, length)
-import Data.Maybe (Maybe, fromMaybe, isJust)
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Newtype (class Newtype, un)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Data.Unfoldable (replicateA)
@@ -27,9 +31,18 @@ user = makeTable "user" :: Table
   , username :: Column String True
   , passwordHash :: Column String True
   , salt :: Column String True
-  , bio :: Column String False
-  , image :: Column String False
+  , bio :: Column (Maybe String) False
+  , image :: Column (Maybe String) False
   )
+
+type UserRecord =
+  { email :: String
+  , username :: String
+  , passwordHash :: String
+  , salt :: String
+  , bio :: Maybe String
+  , image :: Maybe String
+  }
 
 newtype Salt = Salt String
 
@@ -60,9 +73,28 @@ register { email, username, password } db = do
     , salt: (un Salt salt)
     }
 
-{-
-getByUsername :: forall m. MonadAff m => Username -> DBConnection -> m (Maybe User)
-getByUsername db = liftAff $ runSelectMaybeQuery db do
-  u <- from user
-  pure $ select { email: u.email, token
-                -}
+logIn :: forall m. MonadAff m => Login -> DBConnection -> ExceptT LoginError m User
+logIn login db = do
+  requestedUser :: Maybe UserRecord <- liftAff $ runSelectMaybeQuery db do
+                                         u <- from user
+                                         pure $ select
+                                           { email: u.email
+                                           , username: u.username
+                                           , passwordHash: u.passwordHash
+                                           , salt: u.salt
+                                           , bio: u.bio
+                                           , image: u.image
+                                           }
+                                           `where_` (u.username `Q.eq` Username.toString login.username)
+  case requestedUser of
+    Nothing ->
+      throwError InvalidUsername
+    Just { email, username, passwordHash, salt, bio, image } -> do
+      loginPasswordHash <- hashPassword (Salt salt) login.password
+      when (loginPasswordHash /= passwordHash) $ throwError InvalidPassword
+      -- TODO JWT
+      case { email: _, username: _, token: "placeholder", bio, image } <$> mkEmail email <*> mkUsername username of
+        Left error ->
+          throwError InvalidUserData
+        Right loggedInUser ->
+          pure loggedInUser

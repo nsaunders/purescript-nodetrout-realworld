@@ -18,4 +18,4 @@ data RegistrationError = UsernameConflict
 
 type Login = { | CommonFields }
 
-data LoginError = InvalidUsername | InvalidPassword
+data LoginError = InvalidUsername | InvalidPassword | InvalidUserData
