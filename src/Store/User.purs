@@ -57,7 +57,7 @@ genSalt = liftEffect do
 hashPassword :: forall m. MonadEffect m => Salt -> Password -> m String
 hashPassword (Salt salt) pass = liftEffect $ base64 SHA512 $ (Password.toString pass) <> salt
 
-register :: forall m. MonadAff m => Registration -> DBConnection -> ExceptT RegistrationError m Unit
+register :: forall m. MonadAff m => Registration -> DBConnection -> ExceptT RegistrationError m User
 register { email, username, password } db = do
   existing :: Maybe { username :: String } <- liftAff $ runSelectMaybeQuery db do
                                                 u <- from user
@@ -72,6 +72,7 @@ register { email, username, password } db = do
     , passwordHash
     , salt: (un Salt salt)
     }
+  pure { email, token: "placeholder", username, bio: Nothing, image: Nothing }
 
 logIn :: forall m. MonadAff m => Login -> DBConnection -> ExceptT LoginError m User
 logIn login db = do

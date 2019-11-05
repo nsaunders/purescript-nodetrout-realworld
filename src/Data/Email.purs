@@ -1,7 +1,7 @@
 module Conduit.Data.Email where
 
 import Prelude
-import Data.Argonaut (class DecodeJson, decodeJson)
+import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
 import Data.Either (Either(Left))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
@@ -17,6 +17,9 @@ derive instance newtypeEmail :: Newtype Email _
 
 instance decodeJsonEmail :: DecodeJson Email where
   decodeJson = mkEmail <=< decodeJson
+
+instance encodeJsonEmail :: EncodeJson Email where
+  encodeJson = encodeJson <<< toString
 
 instance showEmail :: Show Email where
   show = genericShow

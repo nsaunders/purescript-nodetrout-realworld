@@ -3,12 +3,13 @@ module Conduit.Resource.User where
 import Prelude
 import Conduit.Capability.User (class ManageUser, registerUser)
 import Conduit.Data.Auth (Registration, RegistrationError(..))
+import Conduit.Data.User (User)
 import Control.Monad.Except (ExceptT, withExceptT)
 import Data.Lens ((.~))
 import Data.Maybe (Maybe(Just))
 import Nodetrout (HTTPError, _errorDetails, error409)
 
-resources :: forall m. ManageUser m => { registration :: Registration -> { "POST" :: ExceptT HTTPError m Unit } }
+resources :: forall m. ManageUser m => { registration :: Registration -> { "POST" :: ExceptT HTTPError m User } }
 resources =
   { registration: \r -> { "POST": withExceptT registrationErrorHTTP $ registerUser r }
   }

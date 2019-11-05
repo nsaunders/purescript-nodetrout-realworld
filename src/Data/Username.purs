@@ -1,7 +1,7 @@
 module Conduit.Data.Username where
 
 import Prelude
-import Data.Argonaut (class DecodeJson, decodeJson)
+import Data.Argonaut (class DecodeJson, class EncodeJson, decodeJson, encodeJson)
 import Data.Either (Either(Left))
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
@@ -14,6 +14,9 @@ derive instance newtypeUsername :: Newtype Username _
 
 instance decodeJsonUsername :: DecodeJson Username where
   decodeJson = mkUsername <=< decodeJson
+
+instance encodeJsonUsername :: EncodeJson Username where
+  encodeJson = encodeJson <<< toString
 
 instance showUsername :: Show Username where
   show = genericShow
