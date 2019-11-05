@@ -9,9 +9,13 @@ import Data.Lens ((.~))
 import Data.Maybe (Maybe(Just))
 import Nodetrout (HTTPError, _errorDetails, error409)
 
-resources :: forall m. ManageUser m => { registration :: Registration -> { "POST" :: ExceptT HTTPError m User } }
+resources
+  :: forall m
+   . ManageUser m
+  => { registration :: Registration -> { "POST" :: ExceptT HTTPError m { user :: User } }
+     }
 resources =
-  { registration: \r -> { "POST": withExceptT registrationErrorHTTP $ registerUser r }
+  { registration: \r -> { "POST": withExceptT registrationErrorHTTP $ { user: _ } <$> registerUser r }
   }
 
 registrationErrorHTTP :: RegistrationError -> HTTPError
