@@ -8,6 +8,7 @@
     , "psci-support"
     , "querydsl"
     , "random"
+    , "simple-jwt"
     , "trout"
     ]
 , packages =

@@ -16,7 +16,7 @@ derive instance genericEmail :: Generic Email _
 derive instance newtypeEmail :: Newtype Email _
 
 instance decodeJsonEmail :: DecodeJson Email where
-  decodeJson = decodeJson >>> map Email
+  decodeJson = mkEmail <=< decodeJson
 
 instance showEmail :: Show Email where
   show = genericShow

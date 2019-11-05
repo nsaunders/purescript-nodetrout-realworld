@@ -13,7 +13,7 @@ derive instance genericUsername :: Generic Username _
 derive instance newtypeUsername :: Newtype Username _
 
 instance decodeJsonUsername :: DecodeJson Username where
-  decodeJson = decodeJson >>> map Username
+  decodeJson = mkUsername <=< decodeJson
 
 instance showUsername :: Show Username where
   show = genericShow
