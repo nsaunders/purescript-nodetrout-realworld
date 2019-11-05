@@ -9,7 +9,7 @@ import Type.Trout.Method (Post)
 
 type Api =
        "login" := "login" :/ ReqBody Login JSON :> Resource (Post { user :: User } JSON)
-  :<|> "registration" := "register" :/ ReqBody Registration JSON :> Resource (Post { user :: User } JSON)
+  :<|> "registration" := ReqBody Registration JSON :> Resource (Post { user :: User } JSON)
 
 api :: Proxy Api
 api = Proxy
