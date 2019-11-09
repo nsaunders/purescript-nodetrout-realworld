@@ -21,8 +21,9 @@ type Api = "users" := "api" :/ "users" :/ User.Api
 main :: Effect Unit
 main = launchAff_ do
   db <- newDB "conduit.db"
+  let jwtSecret = "temporary"
   liftEffect do
-    server <- createServer $ serve api resources (runAppM { db }) onError
+    server <- createServer $ serve api resources (runAppM { db, jwtSecret }) onError
     listen server { hostname: "0.0.0.0", port: 3000, backlog: Nothing } $ log "Listening on port 3000..."
 
   where

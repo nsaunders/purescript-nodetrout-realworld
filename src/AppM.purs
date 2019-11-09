@@ -4,8 +4,8 @@ import Prelude
 import Conduit.Capability.User (class ManageUser)
 import Conduit.Env (Env)
 import Conduit.Store.User as UserStore
-import Control.Monad.Reader.Class (class MonadAsk)
-import Control.Monad.Reader.Trans (ReaderT, asks, runReaderT)
+import Control.Monad.Reader.Class (class MonadAsk, asks)
+import Control.Monad.Reader.Trans (ReaderT, runReaderT)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
@@ -25,8 +25,8 @@ instance monadAskAppM :: TypeEquals e Env => MonadAsk e AppM where
   ask = AppM $ asks from
 
 instance manageUserAppM :: ManageUser AppM where
-  loginUser login = asks _.db >>= UserStore.logIn login
-  registerUser registration = asks _.db >>= UserStore.register registration
+  loginUser = UserStore.logIn
+  registerUser = UserStore.register
 
 runAppM :: Env -> AppM ~> Aff
 runAppM env (AppM appM) = runReaderT appM env

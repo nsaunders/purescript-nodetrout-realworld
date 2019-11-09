@@ -10,6 +10,7 @@ import Conduit.Data.User (User)
 import Conduit.Data.Username (mkUsername)
 import Conduit.Data.Username (toString) as Username
 import Control.Monad.Except (ExceptT, throwError)
+import Control.Monad.Reader (class MonadAsk, ask)
 import Data.Array (index, length)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
@@ -20,6 +21,8 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Random (randomInt)
 import Node.Crypto.Hash (Algorithm(SHA512), base64)
+import Node.Simple.Jwt (Secret, encode) as Jwt
+import Node.Simple.Jwt (Algorithm(HS256))
 import QueryDsl (Column, Table, from, insertInto, makeTable, select, where_)
 import QueryDsl.Expressions (eq) as Q
 import QueryDsl.SQLite3 (runQuery, runSelectMaybeQuery)
@@ -57,8 +60,14 @@ genSalt = liftEffect do
 hashPassword :: forall m. MonadEffect m => Salt -> Password -> m String
 hashPassword (Salt salt) pass = liftEffect $ base64 SHA512 $ (Password.toString pass) <> salt
 
-register :: forall m. MonadAff m => Registration -> DBConnection -> ExceptT RegistrationError m User
-register { email, username, password } db = do
+register
+  :: forall env m
+   . MonadAsk { db :: DBConnection, jwtSecret :: Jwt.Secret | env } m
+  => MonadAff m
+  => Registration
+  -> ExceptT RegistrationError m User
+register { email, username, password } = do
+  { db, jwtSecret } <- ask
   existing :: Maybe { username :: String } <- liftAff $ runSelectMaybeQuery db do
                                                 u <- from user
                                                 pure $ select { username: u.username }
@@ -72,10 +81,17 @@ register { email, username, password } db = do
     , passwordHash
     , salt: (un Salt salt)
     }
-  pure { email, token: "placeholder", username, bio: Nothing, image: Nothing }
+  token <- liftEffect $ show <$> Jwt.encode jwtSecret HS256 (Username.toString username)
+  pure { email, token, username, bio: Nothing, image: Nothing }
 
-logIn :: forall m. MonadAff m => Login -> DBConnection -> ExceptT LoginError m User
-logIn login db = do
+logIn
+  :: forall env m
+   . MonadAsk { db :: DBConnection, jwtSecret :: Jwt.Secret | env } m
+  => MonadAff m
+  => Login
+  -> ExceptT LoginError m User
+logIn login = do
+  { db, jwtSecret } <- ask
   requestedUser :: Maybe UserRecord <- liftAff $ runSelectMaybeQuery db do
                                          u <- from user
                                          pure $ select
@@ -93,8 +109,8 @@ logIn login db = do
     Just { email, username, passwordHash, salt, bio, image } -> do
       loginPasswordHash <- hashPassword (Salt salt) login.password
       when (loginPasswordHash /= passwordHash) $ throwError InvalidPassword
-      -- TODO JWT
-      case { email: _, username: _, token: "placeholder", bio, image } <$> mkEmail email <*> mkUsername username of
+      token <- liftEffect $ show <$> Jwt.encode jwtSecret HS256 username
+      case { email: _, username: _, token, bio, image } <$> mkEmail email <*> mkUsername username of
         Left error ->
           throwError InvalidUserData
         Right loggedInUser ->
