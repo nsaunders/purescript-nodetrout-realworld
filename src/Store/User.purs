@@ -20,7 +20,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Random (randomInt)
 import Node.Crypto.Hash (Algorithm(SHA512), base64)
-import Node.Simple.Jwt (Secret, encode) as Jwt
+import Node.Simple.Jwt (Secret, encode, toString) as Jwt
 import Node.Simple.Jwt (Algorithm(HS256))
 import QueryDsl (Column, Table, from, insertInto, makeTable, select, where_)
 import QueryDsl.Expressions (eq) as Q
@@ -80,7 +80,7 @@ register { email, username, password } = do
     , passwordHash
     , salt: (un Salt salt)
     }
-  token <- liftEffect $ show <$> Jwt.encode jwtSecret HS256 (Username.toString username)
+  token <- liftEffect $ Jwt.toString <$> Jwt.encode jwtSecret HS256 (Username.toString username)
   pure { email, token, username, bio: Nothing, image: Nothing }
 
 logIn
@@ -108,7 +108,7 @@ logIn login = do
     Just { email, username, passwordHash, salt, bio, image } -> do
       loginPasswordHash <- hashPassword (Salt salt) login.password
       when (loginPasswordHash /= passwordHash) $ throwError InvalidPassword
-      token <- liftEffect $ show <$> Jwt.encode jwtSecret HS256 username
+      token <- liftEffect $ Jwt.toString <$> Jwt.encode jwtSecret HS256 username
       case { email: _, username: _, token, bio, image } <$> mkEmail email <*> mkUsername username of
         Left error ->
           throwError InvalidUserData
