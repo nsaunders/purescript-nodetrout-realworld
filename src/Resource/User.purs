@@ -1,9 +1,8 @@
 module Conduit.Resource.User where
 
 import Prelude
-import Conduit.Capability.User (class ManageUser, loginUser, registerUser)
-import Conduit.Data.Auth (Login, LoginError(..), Registration, RegistrationError(..))
-import Conduit.Data.User (User)
+import Conduit.Capability.Auth (class Auth, loginUser, registerUser)
+import Conduit.Data.Auth (AuthUser, Login, LoginError(..), Registration, RegistrationError(..))
 import Control.Monad.Except (ExceptT, withExceptT)
 import Data.Lens ((.~))
 import Data.Maybe (Maybe(Just))
@@ -11,9 +10,9 @@ import Nodetrout (HTTPError, _errorDetails, error401, error409, error500)
 
 resources
   :: forall m
-   . ManageUser m
-  => { login :: { user :: Login } -> { "POST" :: ExceptT HTTPError m { user :: User } }
-     , registration :: { user :: Registration } -> { "POST" :: ExceptT HTTPError m { user :: User } }
+   . Auth m
+  => { login :: { user :: Login } -> { "POST" :: ExceptT HTTPError m { user :: AuthUser } }
+     , registration :: { user :: Registration } -> { "POST" :: ExceptT HTTPError m { user :: AuthUser } }
      }
 resources =
   { login: \{ user: l } -> { "POST": withExceptT loginErrorHTTP $ { user: _ } <$> loginUser l }

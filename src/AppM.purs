@@ -1,7 +1,7 @@
 module Conduit.AppM where
 
 import Prelude
-import Conduit.Capability.User (class ManageUser)
+import Conduit.Capability.Auth (class Auth)
 import Conduit.Env (Env)
 import Conduit.Store.User as UserStore
 import Control.Monad.Reader.Class (class MonadAsk, asks)
@@ -24,7 +24,7 @@ derive newtype instance monadAffAppM :: MonadAff AppM
 instance monadAskAppM :: TypeEquals e Env => MonadAsk e AppM where
   ask = AppM $ asks from
 
-instance manageUserAppM :: ManageUser AppM where
+instance manageUserAppM :: Auth AppM where
   loginUser = UserStore.logIn
   registerUser = UserStore.register
 

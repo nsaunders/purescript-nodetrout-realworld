@@ -1,8 +1,9 @@
 module Conduit.Data.Auth where
 
 import Conduit.Data.Email (Email)
-import Conduit.Data.Username (Username)
+import Conduit.Data.Profile (ProfileRep)
 import Conduit.Data.Password (Password)
+import Conduit.Data.Username (Username)
 
 type CommonFields =
   ( username :: Username
@@ -19,3 +20,9 @@ data RegistrationError = UsernameConflict
 type Login = { | CommonFields }
 
 data LoginError = InvalidUsername | InvalidPassword | InvalidUserData
+
+type AuthUser =
+  { email :: Email
+  , token :: String
+  | ProfileRep
+  }

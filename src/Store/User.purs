@@ -1,12 +1,11 @@
 module Conduit.Store.User where
 
 import Prelude
-import Conduit.Data.Auth (Login, LoginError(..), Registration, RegistrationError(..))
+import Conduit.Data.Auth (AuthUser, Login, LoginError(..), Registration, RegistrationError(..))
 import Conduit.Data.Email (mkEmail)
 import Conduit.Data.Email (toString) as Email
 import Conduit.Data.Password (Password)
 import Conduit.Data.Password (toString) as Password
-import Conduit.Data.User (User)
 import Conduit.Data.Username (mkUsername)
 import Conduit.Data.Username (toString) as Username
 import Control.Monad.Except (ExceptT, throwError)
@@ -65,7 +64,7 @@ register
    . MonadAsk { db :: DBConnection, jwtSecret :: Jwt.Secret | env } m
   => MonadAff m
   => Registration
-  -> ExceptT RegistrationError m User
+  -> ExceptT RegistrationError m AuthUser
 register { email, username, password } = do
   { db, jwtSecret } <- ask
   existing :: Maybe { username :: String } <- liftAff $ runSelectMaybeQuery db do
@@ -89,7 +88,7 @@ logIn
    . MonadAsk { db :: DBConnection, jwtSecret :: Jwt.Secret | env } m
   => MonadAff m
   => Login
-  -> ExceptT LoginError m User
+  -> ExceptT LoginError m AuthUser
 logIn login = do
   { db, jwtSecret } <- ask
   requestedUser :: Maybe UserRecord <- liftAff $ runSelectMaybeQuery db do
