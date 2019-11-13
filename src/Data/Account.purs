@@ -1,4 +1,4 @@
-module Conduit.Data.Auth where
+module Conduit.Data.Account where
 
 import Conduit.Data.Email (Email)
 import Conduit.Data.Profile (ProfileRep)
@@ -21,7 +21,7 @@ type Login = { | CommonFields }
 
 data LoginError = InvalidUsername | InvalidPassword | InvalidUserData
 
-type AuthUser =
+type Account =
   { email :: Email
   , token :: String
   | ProfileRep
