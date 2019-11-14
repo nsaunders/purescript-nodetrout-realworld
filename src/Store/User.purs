@@ -2,6 +2,8 @@ module Conduit.Store.User where
 
 import Prelude
 import Conduit.Data.Account (Account)
+import Conduit.Data.AccountView (AccountViewError)
+import Conduit.Data.AccountView (AccountViewError(..)) as AccountView
 import Conduit.Data.Login (Login, LoginError)
 import Conduit.Data.Login (LoginError(..)) as Login
 import Conduit.Data.Registration (Registration, RegistrationError(..))
@@ -9,11 +11,13 @@ import Conduit.Data.Email (mkEmail)
 import Conduit.Data.Email (toString) as Email
 import Conduit.Data.Password (Password)
 import Conduit.Data.Password (toString) as Password
-import Conduit.Data.Username (mkUsername)
+import Conduit.Data.Username (Username, mkUsername)
 import Conduit.Data.Username (toString) as Username
 import Control.Monad.Except (ExceptT, throwError)
+import Control.Monad.Except.Trans (except, withExceptT)
 import Control.Monad.Reader (class MonadAsk, ask)
 import Data.Array (index, length)
+import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Newtype (class Newtype, un)
@@ -23,7 +27,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Random (randomInt)
 import Node.Crypto.Hash (Algorithm(SHA512), base64)
-import Node.Simple.Jwt (Secret, encode, toString) as Jwt
+import Node.Simple.Jwt (Secret, decode, encode, fromString, toString) as Jwt
 import Node.Simple.Jwt (Algorithm(HS256))
 import QueryDsl (Column, Table, from, insertInto, makeTable, select, where_)
 import QueryDsl.Expressions (eq) as Q
@@ -86,6 +90,37 @@ register { email, username, password } = do
   token <- liftEffect $ Jwt.toString <$> Jwt.encode jwtSecret HS256 (Username.toString username)
   pure { email, token, username, bio: Nothing, image: Nothing }
 
+getRecordByUsername
+  :: forall env m
+   . MonadAsk { db :: DBConnection | env } m
+  => MonadAff m
+  => Username
+  -> m (Maybe UserRecord)
+getRecordByUsername username = do
+  { db } <- ask
+  liftAff $ runSelectMaybeQuery db do
+    u <- from user
+    pure $ select
+      { email: u.email
+      , username: u.username
+      , passwordHash: u.passwordHash
+      , salt: u.salt
+      , bio: u.bio
+      , image: u.image
+      }
+      `where_` (u.username `Q.eq` Username.toString username)
+
+mkAccount
+  :: forall env m
+   . MonadAsk { jwtSecret :: Jwt.Secret | env } m
+  => MonadEffect m
+  => UserRecord
+  -> ExceptT String m Account
+mkAccount { email, username, passwordHash, salt, bio, image } = do
+  { jwtSecret } <- ask
+  token <- liftEffect $ Jwt.toString <$> Jwt.encode jwtSecret HS256 username
+  except $ { email: _, username: _, token, bio, image } <$> mkEmail email <*> mkUsername username
+
 logIn
   :: forall env m
    . MonadAsk { db :: DBConnection, jwtSecret :: Jwt.Secret | env } m
@@ -93,27 +128,31 @@ logIn
   => Login
   -> ExceptT LoginError m Account
 logIn login = do
-  { db, jwtSecret } <- ask
-  requestedUser :: Maybe UserRecord <- liftAff $ runSelectMaybeQuery db do
-                                         u <- from user
-                                         pure $ select
-                                           { email: u.email
-                                           , username: u.username
-                                           , passwordHash: u.passwordHash
-                                           , salt: u.salt
-                                           , bio: u.bio
-                                           , image: u.image
-                                           }
-                                           `where_` (u.username `Q.eq` Username.toString login.username)
+  requestedUser <- getRecordByUsername login.username
   case requestedUser of
     Nothing ->
       throwError Login.InvalidUsername
-    Just { email, username, passwordHash, salt, bio, image } -> do
+    Just userRecord@{ salt, passwordHash } -> do
       loginPasswordHash <- hashPassword (Salt salt) login.password
       when (loginPasswordHash /= passwordHash) $ throwError Login.InvalidPassword
-      token <- liftEffect $ Jwt.toString <$> Jwt.encode jwtSecret HS256 username
-      case { email: _, username: _, token, bio, image } <$> mkEmail email <*> mkUsername username of
-        Left error ->
-          throwError Login.InvalidUserData
-        Right loggedInUser ->
-          pure loggedInUser
+      withExceptT (const Login.InvalidUserData) $ mkAccount userRecord
+
+viewAccount
+  :: forall env m
+   . MonadAsk { db :: DBConnection, jwtSecret :: Jwt.Secret | env } m
+  => MonadAff m
+  => String
+  -> ExceptT AccountViewError m Account
+viewAccount token = do
+  { jwtSecret } <- ask
+  payload <- liftEffect $ lmap (const "JWT error") <$> (Jwt.decode jwtSecret $ Jwt.fromString token)
+  case payload >>= mkUsername of
+    Left _ ->
+      throwError AccountView.InvalidToken
+    Right username -> do
+      requestedUser <- getRecordByUsername username
+      case requestedUser of
+        Nothing ->
+          throwError AccountView.InvalidUsername
+        Just userRecord ->
+          withExceptT (const AccountView.InvalidUserData) $ mkAccount userRecord
