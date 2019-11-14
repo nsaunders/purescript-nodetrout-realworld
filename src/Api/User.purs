@@ -1,6 +1,8 @@
 module Conduit.Api.User where
 
-import Conduit.Data.Account (Account, Login, Registration)
+import Conduit.Data.Account (Account)
+import Conduit.Data.Login (Login)
+import Conduit.Data.Registration (Registration)
 import Type.Proxy (Proxy(..))
 import Type.Trout (type (:=), type (:>), type (:/), type (:<|>), ReqBody, Resource)
 import Type.Trout.ContentType.JSON (JSON)

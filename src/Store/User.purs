@@ -1,7 +1,10 @@
 module Conduit.Store.User where
 
 import Prelude
-import Conduit.Data.Account (Account, Login, LoginError(..), Registration, RegistrationError(..))
+import Conduit.Data.Account (Account)
+import Conduit.Data.Login (Login, LoginError)
+import Conduit.Data.Login (LoginError(..)) as Login
+import Conduit.Data.Registration (Registration, RegistrationError(..))
 import Conduit.Data.Email (mkEmail)
 import Conduit.Data.Email (toString) as Email
 import Conduit.Data.Password (Password)
@@ -104,13 +107,13 @@ logIn login = do
                                            `where_` (u.username `Q.eq` Username.toString login.username)
   case requestedUser of
     Nothing ->
-      throwError InvalidUsername
+      throwError Login.InvalidUsername
     Just { email, username, passwordHash, salt, bio, image } -> do
       loginPasswordHash <- hashPassword (Salt salt) login.password
-      when (loginPasswordHash /= passwordHash) $ throwError InvalidPassword
+      when (loginPasswordHash /= passwordHash) $ throwError Login.InvalidPassword
       token <- liftEffect $ Jwt.toString <$> Jwt.encode jwtSecret HS256 username
       case { email: _, username: _, token, bio, image } <$> mkEmail email <*> mkUsername username of
         Left error ->
-          throwError InvalidUserData
+          throwError Login.InvalidUserData
         Right loggedInUser ->
           pure loggedInUser

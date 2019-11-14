@@ -2,7 +2,10 @@ module Conduit.Resource.User where
 
 import Prelude
 import Conduit.Capability.Account (class Account, login, register)
-import Conduit.Data.Account (Account, Login, LoginError(..), Registration, RegistrationError(..))
+import Conduit.Data.Account (Account)
+import Conduit.Data.Login (Login, LoginError)
+import Conduit.Data.Login (LoginError(..)) as Login
+import Conduit.Data.Registration (Registration, RegistrationError(..))
 import Control.Monad.Except (ExceptT, withExceptT)
 import Data.Lens ((.~))
 import Data.Maybe (Maybe(Just))
@@ -21,7 +24,7 @@ resources =
 
 loginErrorHTTP :: LoginError -> HTTPError
 loginErrorHTTP = case _ of
-  InvalidUserData -> error500 # _errorDetails .~ Just "Invalid user data"
+  Login.InvalidUserData -> error500 # _errorDetails .~ Just "Invalid user data"
   _ -> error401 # _errorDetails .~ Just "Invalid username or password"
 
 registrationErrorHTTP :: RegistrationError -> HTTPError
