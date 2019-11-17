@@ -27,6 +27,7 @@ instance monadAskAppM :: TypeEquals e Env => MonadAsk e AppM where
 instance manageUserAppM :: Account AppM where
   login = UserStore.logIn
   register = UserStore.register
+  viewAccount = UserStore.viewAccount
 
 runAppM :: Env -> AppM ~> Aff
 runAppM env (AppM appM) = runReaderT appM env

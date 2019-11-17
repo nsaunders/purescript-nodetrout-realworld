@@ -16,7 +16,7 @@ import SQLite3 (newDB)
 import Type.Proxy (Proxy(..))
 import Type.Trout (type (:=), type (:/))
 
-type Api = "users" := "api" :/ "users" :/ User.Api
+type Api = "users" := "api" :/ User.Api
 
 main :: Effect Unit
 main = launchAff_ do
